@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件批量重命名 · 真实操作</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            padding: 30px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px -12px rgba(0,0,0,0.15);
+            padding: 35px 40px;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #0b1b33;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .subhead {
+            color: #5a6f87;
+            font-size: 15px;
+            margin-bottom: 25px;
+            padding-left: 16px;
+            border-left: 4px solid #3b82f6;
+            background: #f0f7ff;
+            border-radius: 0 12px 12px 0;
+            line-height: 1.6;
+            padding: 12px 20px;
+        }
+        .warning-box {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 14px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            color: #991b1b;
+            font-weight: 500;
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #f8fafc;
+            padding: 15px 20px;
+            border-radius: 16px;
+        }
+        .prefix-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 5px 12px 5px 16px;
+            border-radius: 40px;
+            border: 2px solid #e2e8f0;
+        }
+        .prefix-group label {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+        }
+        .prefix-group input {
+            border: none;
+            padding: 6px 4px;
+            font-size: 15px;
+            width: 100px;
+            outline: none;
+            font-weight: 500;
+        }
+        .folder-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 5px 12px 5px 16px;
+            border-radius: 40px;
+            border: 2px solid #e2e8f0;
+            flex: 1;
+            min-width: 280px;
+            max-width: 100%;
+        }
+        .folder-group label {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .folder-group input {
+            border: none;
+            padding: 6px 4px;
+            font-size: 13px;
+            flex: 1;
+            outline: none;
+            color: #2563eb;
+            font-weight: 500;
+            min-width: 120px;
+        }
+        .folder-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: nowrap;
+        }
+        .btn-folder {
+            background: #e2e8f0;
+            border: none;
+            padding: 4px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e293b;
+            transition: 0.2s;
+            white-space: nowrap;
+            height: 30px;
+            display: flex;
+            align-items: center;
+        }
+        .btn-folder:hover {
+            background: #cbd5e1;
+        }
+        .btn-folder-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-folder-primary:hover {
+            background: #1d4ed8;
+        }
+        .btn {
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px -6px #2563eb80;
+        }
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+        .btn-outline {
+            background: transparent;
+            color: #1e293b;
+            border: 2px solid #d1d9e6;
+        }
+        .btn-outline:hover {
+            background: #f1f5f9;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .stats {
+            font-size: 13px;
+            color: #475569;
+            background: white;
+            padding: 4px 14px;
+            border-radius: 40px;
+            border: 1px solid #e2e8f0;
+            white-space: nowrap;
+            margin-left: auto;
+        }
+        .file-grid {
+            background: #fafcff;
+            border-radius: 16px;
+            border: 1px solid #e9edf4;
+            overflow: hidden;
+            margin: 15px 0 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .grid-header {
+            display: grid;
+            grid-template-columns: 2.5fr 2.5fr 1.2fr 0.9fr 0.8fr;
+            background: #f1f6fd;
+            padding: 10px 16px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #1e3a6b;
+            border-bottom: 2px solid #dce3ed;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .file-row {
+            display: grid;
+            grid-template-columns: 2.5fr 2.5fr 1.2fr 0.9fr 0.8fr;
+            padding: 8px 16px;
+            align-items: center;
+            border-bottom: 1px solid #edf2f9;
+            font-size: 14px;
+            transition: 0.1s;
+        }
+        .file-row:last-child {
+            border-bottom: none;
+        }
+        .file-row:hover {
+            background: #f8faff;
+        }
+        .file-name {
+            color: #0b1b33;
+            font-weight: 500;
+            word-break: break-all;
+            font-size: 13px;
+        }
+        .file-name-new {
+            color: #0b5e2e;
+            font-weight: 500;
+            word-break: break-all;
+            font-size: 13px;
+        }
+        .file-size {
+            color: #2d3f5e;
+            font-size: 12px;
+        }
+        .status-badge {
+            padding: 2px 10px;
+            border-radius: 40px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-pending {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .status-done {
+            background: #d1fae5;
+            color: #0a6b3a;
+        }
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .log-area {
+            margin-top: 25px;
+            border-top: 2px solid #e2eaf2;
+            padding-top: 20px;
+        }
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .log-header span {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 15px;
+        }
+        .log-box {
+            background: #0b1422;
+            color: #d4e2ff;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #2d3a52;
+        }
+        .log-box:empty::before {
+            content: '等待操作…';
+            color: #7a8aa3;
+            font-style: italic;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7f9a;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7f9a;
+        }
+        .current-dir-info {
+            background: #f0f7ff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #1e3a6b;
+            font-size: 13px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .current-dir-info code {
+            background: white;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            word-break: break-all;
+        }
+        .folder-hint {
+            font-size: 12px;
+            color: #6b7f9a;
+            margin-top: 4px;
+        }
+        @media (max-width: 992px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .folder-group {
+                min-width: unset;
+                max-width: 100%;
+            }
+            .stats {
+                margin-left: 0;
+                text-align: center;
+            }
+            .grid-header, .file-row {
+                grid-template-columns: 1.5fr 1.5fr 0.8fr 0.6fr 0.5fr;
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            .prefix-group, .folder-group {
+                flex-wrap: wrap;
+                padding: 8px 12px;
+            }
+            .folder-buttons {
+                flex-wrap: wrap;
+            }
+            .btn {
+                padding: 6px 14px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>
+        📁 批量重命名
+        <span style="font-size: 18px; font-weight: 400; color: #3b6ba5;">· 真实操作</span>
+    </h1>
+    <div class="subhead">
+        ⚡ 文件从 <strong>001</strong> 开始顺序编号，保留原扩展名。<br>
+        可自定义前缀（默认 <strong>cn</strong>），操作将 <strong style="color: #dc2626;">实际修改</strong> 文件！
+    </div>
+
+    <div class="warning-box">
+        ⚠️ <strong>警告：</strong>此操作将实际重命名您选择的目录下的文件，且不可撤销！
+        请确保已备份重要数据。继续操作即表示您已了解风险。
+    </div>
+
+    <div class="toolbar">
+        <div class="prefix-group">
+            <label for="prefixInput">前缀</label>
+            <input type="text" id="prefixInput" value="cn" placeholder="例如: img">
+        </div>
+        <div class="folder-group">
+            <label>📂 目录</label>
+            <input type="text" id="folderInput" placeholder="输入完整路径，例如: D:\Photos" spellcheck="false">
+            <div class="folder-buttons">
+                <button class="btn-folder btn-folder-primary" onclick="selectFolder()">📁 选择</button>
+                <button class="btn-folder" onclick="resetToDefault()">↺ 默认</button>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="refreshFiles()">🔄 刷新</button>
+        <button class="btn btn-danger" id="renameBtn" onclick="performRename()">⚡ 执行</button>
+        <span class="stats" id="fileCount">📄 加载中...</span>
+    </div>
+
+    <div class="current-dir-info" id="dirInfo">
+        📁 当前目录: <code id="currentDirDisplay">加载中...</code>
+    </div>
+    <div class="folder-hint">💡 提示：点击"选择"按钮选取文件夹后，请手动将完整路径粘贴到目录框中</div>
+
+    <!-- 文件列表 -->
+    <div class="file-grid" id="fileGrid">
+        <div class="grid-header">
+            <span>源文件名</span>
+            <span>重命名后</span>
+            <span>大小</span>
+            <span>状态</span>
+            <span>#</span>
+        </div>
+        <div id="fileListContainer">
+            <div class="loading">⏳ 正在加载文件列表...</div>
+        </div>
+    </div>
+
+    <!-- 日志 -->
+    <div class="log-area">
+        <div class="log-header">
+            <span>📋 映射日志</span>
+            <span style="font-size:13px; color:#4b6a8f;">新文件 → 源文件</span>
+        </div>
+        <div class="log-box" id="logBox"></div>
+    </div>
+</div>
+
+<script>
+    // ---------- 前端逻辑 ----------
+    let fileList = [];
+    let renameMap = [];
+    let currentDir = '';
+
+    const fileListContainer = document.getElementById('fileListContainer');
+    const logBox = document.getElementById('logBox');
+    const fileCountSpan = document.getElementById('fileCount');
+    const prefixInput = document.getElementById('prefixInput');
+    const folderInput = document.getElementById('folderInput');
+    const currentDirDisplay = document.getElementById('currentDirDisplay');
+    const renameBtn = document.getElementById('renameBtn');
+
+    // 获取文件列表
+    async function refreshFiles() {
+        try {
+            const dir = folderInput.value.trim() || '';
+            fileListContainer.innerHTML = '<div class="loading">⏳ 正在加载文件列表...</div>';
+            
+            const url = dir ? `/api/files?dir=${encodeURIComponent(dir)}` : '/api/files';
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.success) {
+                currentDir = data.currentDir;
+                currentDirDisplay.textContent = currentDir;
+                // 如果当前目录与输入框不同，更新输入框
+                if (folderInput.value.trim() !== currentDir) {
+                    folderInput.value = currentDir;
+                }
+                
+                fileList = data.files.map(f => ({
+                    ...f,
+                    newName: '',
+                    status: 'pending'
+                }));
+                renderFileList();
+                logBox.textContent = '';
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (err) {
+            fileListContainer.innerHTML = `<div class="empty-state">❌ 加载失败: ${err.message}</div>`;
+            console.error(err);
+        }
+    }
+
+    // 选择文件夹（使用浏览器文件选择器）
+    function selectFolder() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.webkitdirectory = true;
+        input.multiple = true;
+        input.id = 'folderSelector';
+        
+        input.onchange = (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                // 获取第一个文件的路径
+                const firstFile = files[0];
+                const pathParts = firstFile.webkitRelativePath.split('/');
+                
+                if (pathParts.length > 0) {
+                    const folderName = pathParts[0];
+                    
+                    // 获取用户桌面路径
+                    const username = 'YourName'; // 默认
+                    const defaultPath = `C:\\Users\\${username}\\Desktop\\${folderName}`;
+                    
+                    // 显示提示并让用户输入路径
+                    const message = `✅ 已选择文件夹: "${folderName}"
+                    
+⚠️ 注意：浏览器无法获取文件夹的完整路径。
+
+请手动输入完整路径到目录框中，例如：
+• C:\\Users\\用户名\\Desktop\\${folderName}
+• D:\\Photos\\${folderName}`;
+                    
+                    alert(message);
+                    
+                    // 聚焦到输入框，方便用户输入
+                    folderInput.focus();
+                    folderInput.select();
+                    
+                    // 可选：自动填入一个常用路径模板
+                    // 不自动填充，让用户自己输入更准确
+                }
+            }
+            // 清理
+            document.body.removeChild(input);
+        };
+        
+        document.body.appendChild(input);
+        input.click();
+    }
+
+    // 重置为默认目录（当前脚本所在目录）
+    function resetToDefault() {
+        folderInput.value = '';
+        refreshFiles();
+    }
+
+    // 渲染文件列表
+    function renderFileList() {
+        if (!fileList.length) {
+            fileListContainer.innerHTML = '<div class="empty-state">📂 当前目录没有可重命名的文件</div>';
+            fileCountSpan.textContent = '📄 0 个文件';
+            return;
+        }
+
+        let html = '';
+        fileList.forEach((item, index) => {
+            const statusClass = item.status === 'done' ? 'status-done' : 
+                              item.status === 'error' ? 'status-error' : 'status-pending';
+            const statusText = item.status === 'done' ? '✅ 已重命名' : 
+                              item.status === 'error' ? '❌ 失败' : '⏳ 待处理';
+            const displayNewName = item.newName || '—';
+            
+            html += `
+                <div class="file-row">
+                    <span class="file-name">${escapeHtml(item.name)}</span>
+                    <span class="file-name-new">${escapeHtml(displayNewName)}</span>
+                    <span class="file-size">${formatSize(item.size)}</span>
+                    <span><span class="status-badge ${statusClass}">${statusText}</span></span>
+                    <span style="font-size:12px; color:#94a3b8;">#${index + 1}</span>
+                </div>
+            `;
+        });
+        fileListContainer.innerHTML = html;
+        fileCountSpan.textContent = `📄 ${fileList.length} 个文件`;
+    }
+
+    // 执行重命名
+    async function performRename() {
+        if (!fileList.length) {
+            alert('没有文件可重命名！');
+            return;
+        }
+
+        const prefix = prefixInput.value.trim() || 'cn';
+        const targetDir = folderInput.value.trim() || currentDir;
+        
+        if (!targetDir) {
+            alert('请指定有效目录！\n\n您可以：\n1. 在目录框中输入完整路径\n2. 点击"默认"使用当前目录');
+            return;
+        }
+
+        if (!confirm(`⚠️ 确定要重命名 ${fileList.length} 个文件吗？\n目录: ${targetDir}\n前缀: ${prefix}\n此操作不可撤销！`)) {
+            return;
+        }
+
+        renameBtn.disabled = true;
+        renameBtn.textContent = '⏳ 执行中...';
+
+        try {
+            const response = await fetch('/api/rename', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prefix: prefix,
+                    files: fileList,
+                    targetDir: targetDir
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                // 更新文件状态
+                data.renamed.forEach(item => {
+                    const file = fileList.find(f => f.name === item.oldName);
+                    if (file) {
+                        file.newName = item.newName;
+                        file.status = 'done';
+                    }
+                });
+                
+                data.errors.forEach(item => {
+                    const file = fileList.find(f => f.name === item.oldName);
+                    if (file) {
+                        file.newName = item.newName;
+                        file.status = 'error';
+                    }
+                });
+
+                renderFileList();
+                
+                // 显示日志
+                logBox.textContent = data.logContent;
+                
+                alert(`✅ 重命名完成！成功: ${data.renamed.length} 个，失败: ${data.errors.length} 个`);
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (err) {
+            alert(`❌ 重命名失败: ${err.message}`);
+            console.error(err);
+        } finally {
+            renameBtn.disabled = false;
+            renameBtn.textContent = '⚡ 执行重命名';
+        }
+    }
+
+    // 辅助函数
+    function formatSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        const val = (bytes / Math.pow(k, i)).toFixed(1);
+        return `${val} ${sizes[i]}`;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 键盘事件
+    prefixInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            performRename();
+        }
+    });
+    
+    folderInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            refreshFiles();
+        }
+    });
+
+    // 初始化加载
+    refreshFiles();
+</script>
+</body>
+</html>

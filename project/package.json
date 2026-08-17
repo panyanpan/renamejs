@@ -1,0 +1,12 @@
+{
+  "name": "file-renamer",
+  "version": "1.0.0",
+  "description": "批量重命名工具 - 真正修改文件",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
