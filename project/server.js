@@ -3,11 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 const PORT = 3000;
-
 // 中间件
 app.use(express.json());
 app.use(express.static('public'));
-
 // 获取当前目录的文件列表
 app.get('/api/files', (req, res) => {
     try {
@@ -32,11 +30,10 @@ app.get('/api/files', (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 });
-
 // 执行重命名
 app.post('/api/rename', (req, res) => {
     try {
-        const { prefix, files, targetDir } = req.body;
+        const { prefix, files, targetDir, startNumber } = req.body;
         const dir = targetDir || __dirname;
         const renameMap = [];
         const errors = [];
@@ -44,12 +41,15 @@ app.post('/api/rename', (req, res) => {
         // 按大小排序
         const sortedFiles = [...files].sort((a, b) => a.size - b.size);
         const total = sortedFiles.length;
-        const digits = Math.max(3, String(total).length);
         const finalPrefix = prefix || 'cn';
-        
-        // 执行重命名
+        const startNum = Number(startNumber) || 1;
+        // 总数字位数，兼容起始大数字
+        const digits = Math.max(3, String(startNum + total - 1).length);
+
+        // 执行重命名，从startNum开始递增
         sortedFiles.forEach((file, index) => {
-            const padded = String(index + 1).padStart(digits, '0');
+            const currentNum = startNum + index;
+            const padded = String(currentNum).padStart(digits, '0');
             const newName = `${finalPrefix}${padded}${file.ext}`;
             const oldPath = path.join(dir, file.name);
             const newPath = path.join(dir, newName);
@@ -95,7 +95,6 @@ app.post('/api/rename', (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 });
-
 // 启动服务器
 app.listen(PORT, () => {
     console.log(`🚀 服务器已启动！`);
