@@ -81,7 +81,7 @@
             border: none;
             padding: 6px 4px;
             font-size: 15px;
-            width: 100px;
+            width: 60px;
             outline: none;
             font-weight: 500;
         }
@@ -103,9 +103,29 @@
             border: none;
             padding: 6px 4px;
             font-size: 15px;
-            width: 80px;
+            width: 60px;
             outline: none;
             font-weight: 500;
+        }
+        .sort-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 5px 12px 5px 16px;
+            border-radius: 40px;
+            border: 2px solid #e2e8f0;
+        }
+        .sort-group label {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+        }
+        .sort-group select {
+            border: none;
+            padding: 5px;
+            font-size:14px;
+            outline:none;
         }
         .folder-group {
             display: flex;
@@ -380,7 +400,7 @@
             .container {
                 padding: 15px;
             }
-            .prefix-group,.startnum-group, .folder-group {
+            .prefix-group,.startnum-group,.sort-group, .folder-group {
                 flex-wrap: wrap;
                 padding: 8px 12px;
             }
@@ -402,7 +422,7 @@
     </h1>
     <div class="subhead">
         ⚡ 文件从自定义起始编号顺序编号，保留原扩展名。<br>
-        可自定义前缀（默认 <strong>cn</strong>）、起始编号（默认<strong>001</strong>），操作将 <strong style="color: #dc2626;">实际修改</strong> 文件！
+        可自定义前缀（默认 <strong>cn</strong>）、起始编号（默认<strong>001</strong>），排序支持文件名/文件大小，操作将 <strong style="color: #dc2626;">实际修改</strong> 文件！
     </div>
     <div class="warning-box">
         ⚠️ <strong>警告：</strong>此操作将实际重命名您选择的目录下的文件，且不可撤销！
@@ -414,8 +434,15 @@
             <input type="text" id="prefixInput" value="cn" placeholder="例如: img">
         </div>
         <div class="startnum-group">
-            <label for="startNumInput">起始编号</label>
+            <label for="startNumInput">起始</label>
             <input type="text" id="startNumInput" value="001" placeholder="001">
+        </div>
+        <div class="sort-group">
+            <label for="sortSelect">排序</label>
+            <select id="sortSelect">
+                <option value="name">名称</option>
+                <option value="size">大小</option>
+            </select>
         </div>
         <div class="folder-group">
             <label>📂 目录</label>
@@ -465,6 +492,7 @@
     const fileCountSpan = document.getElementById('fileCount');
     const prefixInput = document.getElementById('prefixInput');
     const startNumInput = document.getElementById('startNumInput');
+    const sortSelect = document.getElementById('sortSelect');
     const folderInput = document.getElementById('folderInput');
     const currentDirDisplay = document.getElementById('currentDirDisplay');
     const renameBtn = document.getElementById('renameBtn');
@@ -473,11 +501,11 @@
         try {
             const dir = folderInput.value.trim() || '';
             fileListContainer.innerHTML = '<div class="loading">⏳ 正在加载文件列表...</div>';
-            
+
             const url = dir ? `/api/files?dir=${encodeURIComponent(dir)}` : '/api/files';
             const response = await fetch(url);
             const data = await response.json();
-            
+
             if (data.success) {
                 currentDir = data.currentDir;
                 currentDirDisplay.textContent = currentDir;
@@ -485,7 +513,7 @@
                 if (folderInput.value.trim() !== currentDir) {
                     folderInput.value = currentDir;
                 }
-                
+
                 fileList = data.files.map(f => ({
                     ...f,
                     newName: '',
@@ -508,35 +536,35 @@
         input.webkitdirectory = true;
         input.multiple = true;
         input.id = 'folderSelector';
-        
+
         input.onchange = (e) => {
             const files = e.target.files;
             if (files && files.length > 0) {
                 // 获取第一个文件的路径
                 const firstFile = files[0];
                 const pathParts = firstFile.webkitRelativePath.split('/');
-                
+
                 if (pathParts.length > 0) {
                     const folderName = pathParts[0];
-                    
+
                     // 获取用户桌面路径
                     const username = 'YourName'; // 默认
                     const defaultPath = `C:\\Users\\${username}\\Desktop\\${folderName}`;
-                    
+
                     // 显示提示并让用户输入路径
                     const message = `✅ 已选择文件夹: "${folderName}"
-                    
+
 ⚠️ 注意：浏览器无法获取文件夹的完整路径。
 请手动输入完整路径到目录框中，例如：
 • C:\\Users\\用户名\\Desktop\\${folderName}
 • D:\\Photos\\${folderName}`;
-                    
+
                     alert(message);
-                    
+
                     // 聚焦到输入框，方便用户输入
                     folderInput.focus();
                     folderInput.select();
-                    
+
                     // 可选：自动填入一个常用路径模板
                     // 不自动填充，让用户自己输入更准确
                 }
@@ -544,7 +572,7 @@
             // 清理
             document.body.removeChild(input);
         };
-        
+
         document.body.appendChild(input);
         input.click();
     }
@@ -553,6 +581,19 @@
         folderInput.value = '';
         refreshFiles();
     }
+
+    // 获取排序后的数组
+    function getSortedList(list){
+        const sortType = sortSelect.value;
+        const arr = [...list];
+        if(sortType === 'size'){
+            return arr.sort((a,b)=> a.size - b.size);
+        }else{
+            // 按文件名（字典序）
+            return arr.sort((a,b)=> a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
+        }
+    }
+
     // 渲染文件列表，前端预览计算新文件名
     function renderFileList() {
         if (!fileList.length) {
@@ -564,8 +605,7 @@
         let startNum = parseInt(startNumInput.value.trim(),10);
         if(isNaN(startNum) || startNum <1) startNum =1;
 
-        // 按文件大小排序，和后端保持一致
-        const sortedPreview = [...fileList].sort((a,b)=>a.size - b.size);
+        const sortedPreview = getSortedList(fileList);
         const total = sortedPreview.length;
         const digits = Math.max(3, String(total + startNum -1).length);
 
@@ -576,13 +616,13 @@
         });
 
         let html = '';
-        fileList.forEach((item, index) => {
-            const statusClass = item.status === 'done' ? 'status-done' : 
-                              item.status === 'error' ? 'status-error' : 'status-pending';
-            const statusText = item.status === 'done' ? '✅ 已重命名' : 
-                              item.status === 'error' ? '❌ 失败' : '⏳ 待处理';
+        sortedPreview.forEach((item, index) => {
+            const statusClass = item.status === 'done' ? 'status-done' :
+                item.status === 'error' ? 'status-error' : 'status-pending';
+            const statusText = item.status === 'done' ? '✅ 已重命名' :
+                item.status === 'error' ? '❌ 失败' : '⏳ 待处理';
             const displayNewName = item.newName || '—';
-            
+
             html += `
                 <div class="file-row">
                     <span class="file-name">${escapeHtml(item.name)}</span>
@@ -605,17 +645,18 @@
         const prefix = prefixInput.value.trim() || 'cn';
         const startNumRaw = startNumInput.value.trim();
         const startNumber = parseInt(startNumRaw,10);
+        const sortType = sortSelect.value;
         if(isNaN(startNumber) || startNumber <1){
             alert("起始编号必须是大于等于1的数字，例如001、020");
             return;
         }
         const targetDir = folderInput.value.trim() || currentDir;
-        
+
         if (!targetDir) {
             alert('请指定有效目录！\n\n您可以：\n1. 在目录框中输入完整路径\n2. 点击"默认"使用当前目录');
             return;
         }
-        if (!confirm(`⚠️ 确定要重命名 ${fileList.length} 个文件吗？\n目录: ${targetDir}\n前缀: ${prefix}\n起始编号: ${startNumber}\n此操作不可撤销！`)) {
+        if (!confirm(`⚠️ 确定要重命名 ${fileList.length} 个文件吗？\n目录: ${targetDir}\n前缀: ${prefix}\n起始编号: ${startNumber}\n排序方式: ${sortType==='name'?'文件名称':'文件大小'}\n此操作不可撤销！`)) {
             return;
         }
         renameBtn.disabled = true;
@@ -629,12 +670,13 @@
                 body: JSON.stringify({
                     prefix: prefix,
                     startNumber: startNumber,
+                    sortType: sortType,
                     files: fileList,
                     targetDir: targetDir
                 })
             });
             const data = await response.json();
-            
+
             if (data.success) {
                 // 更新文件状态
                 data.renamed.forEach(item => {
@@ -644,7 +686,7 @@
                         file.status = 'done';
                     }
                 });
-                
+
                 data.errors.forEach(item => {
                     const file = fileList.find(f => f.name === item.oldName);
                     if (file) {
@@ -653,10 +695,10 @@
                     }
                 });
                 renderFileList();
-                
+
                 // 显示日志
                 logBox.textContent = data.logContent;
-                
+
                 alert(`✅ 重命名完成！成功: ${data.renamed.length} 个，失败: ${data.errors.length} 个`);
             } else {
                 throw new Error(data.error);
@@ -694,15 +736,16 @@
             performRename();
         }
     });
-    
+
     folderInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             refreshFiles();
         }
     });
-    // 当修改前缀/起始编号，实时刷新预览
+    // 修改前缀/起始编号/排序下拉，实时刷新预览
     prefixInput.addEventListener('input', renderFileList);
     startNumInput.addEventListener('input', renderFileList);
+    sortSelect.addEventListener('change', renderFileList);
 
     // 初始化加载
     refreshFiles();

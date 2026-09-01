@@ -13,12 +13,12 @@ function getFiles(dir) {
         const files = [];
         const scriptName = path.basename(__filename);
         const logFileName = 'log.txt';
-        
+
         items.forEach(item => {
             const fullPath = path.join(dir, item);
             // 排除文件夹、脚本自身和日志文件
-            if (fs.statSync(fullPath).isFile() && 
-                item !== scriptName && 
+            if (fs.statSync(fullPath).isFile() &&
+                item !== scriptName &&
                 item !== logFileName) {
                 files.push({
                     name: item,
@@ -46,27 +46,29 @@ function generateNewName(index, ext, total, prefix) {
 function renameFiles() {
     console.log('📂 扫描文件...');
     const files = getFiles(targetDir);
-    
+
     if (files.length === 0) {
         console.log('⚠️ 没有找到可重命名的文件。');
         return;
     }
-    
+
     console.log(`✅ 找到 ${files.length} 个文件`);
-    
-    // 按大小从小到大排序
-    files.sort((a, b) => a.size - b.size);
-    
+
+    // // 按大小从小到大排序
+    // files.sort((a, b) => a.size - b.size);
+    // 文件名自然排序，支持数字文件名
+    files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+
     // 生成映射并执行重命名
     const renameMap = [];
     const total = files.length;
-    
+
     console.log('🔄 开始重命名...');
-    
+
     files.forEach((file, index) => {
-        const newName = generateNewName(index + 1, file.ext, total, prefix);
+        const newName = generateNewName(index + 1, file.ext, total, prefix); //index + 1 从1开始递增
         const newPath = path.join(targetDir, newName);
-        
+
         try {
             fs.renameSync(file.path, newPath);
             renameMap.push({
@@ -83,7 +85,7 @@ function renameFiles() {
             });
         }
     });
-    
+
     // 生成 log.txt
     const logContent = renameMap.map(item => {
         if (item.error) {
@@ -91,7 +93,7 @@ function renameFiles() {
         }
         return `${item.newName}    ${item.oldName}`;
     }).join('\n');
-    
+
     const logPath = path.join(targetDir, 'log.txt');
     fs.writeFileSync(logPath, logContent, 'utf8');
     console.log(`\n📝 日志已保存至: ${logPath}`);

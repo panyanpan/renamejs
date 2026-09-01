@@ -13,7 +13,7 @@ app.get('/api/files', (req, res) => {
         const items = fs.readdirSync(dir);
         const files = [];
         const excludeFiles = ['server.js', 'package.json', 'package-lock.json', 'log.txt', 'app.js'];
-        
+
         items.forEach(item => {
             const fullPath = path.join(dir, item);
             if (fs.statSync(fullPath).isFile() && !excludeFiles.includes(item)) {
@@ -24,7 +24,7 @@ app.get('/api/files', (req, res) => {
                 });
             }
         });
-        
+
         res.json({ success: true, files, currentDir: dir });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -33,13 +33,19 @@ app.get('/api/files', (req, res) => {
 // 执行重命名
 app.post('/api/rename', (req, res) => {
     try {
-        const { prefix, files, targetDir, startNumber } = req.body;
+        const { prefix, files, targetDir, startNumber, sortType } = req.body;
         const dir = targetDir || __dirname;
         const renameMap = [];
         const errors = [];
-        
-        // 按大小排序
-        const sortedFiles = [...files].sort((a, b) => a.size - b.size);
+
+        let sortedFiles = [...files];
+        if(sortType === 'size'){
+            sortedFiles.sort((a,b) => a.size - b.size);
+        }else{
+            // 文件名自然排序，支持数字文件名
+            sortedFiles.sort((a,b)=> a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'}));
+        }
+
         const total = sortedFiles.length;
         const finalPrefix = prefix || 'cn';
         const startNum = Number(startNumber) || 1;
@@ -53,7 +59,7 @@ app.post('/api/rename', (req, res) => {
             const newName = `${finalPrefix}${padded}${file.ext}`;
             const oldPath = path.join(dir, file.name);
             const newPath = path.join(dir, newName);
-            
+
             try {
                 fs.renameSync(oldPath, newPath);
                 renameMap.push({
@@ -68,21 +74,21 @@ app.post('/api/rename', (req, res) => {
                 });
             }
         });
-        
+
         // 生成 log.txt
-        let logContent = renameMap.map(item => 
+        let logContent = renameMap.map(item =>
             `${item.newName}    ${item.oldName}`
         ).join('\n');
-        
+
         if (errors.length > 0) {
             logContent += '\n\n错误记录:\n';
-            logContent += errors.map(err => 
+            logContent += errors.map(err =>
                 `${err.newName}    ${err.oldName}    (错误: ${err.error})`
             ).join('\n');
         }
-        
+
         fs.writeFileSync(path.join(dir, 'log.txt'), logContent, 'utf8');
-        
+
         res.json({
             success: true,
             renamed: renameMap,
@@ -90,7 +96,7 @@ app.post('/api/rename', (req, res) => {
             logContent: logContent,
             total: renameMap.length
         });
-        
+
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
