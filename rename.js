@@ -54,6 +54,7 @@ function renameFiles() {
 
     console.log(`✅ 找到 ${files.length} 个文件`);
 
+    // ===========================
     // // 按大小从小到大排序
     // files.sort((a, b) => a.size - b.size);
     // 文件名自然排序，支持数字文件名
@@ -66,7 +67,8 @@ function renameFiles() {
     console.log('🔄 开始重命名...');
 
     files.forEach((file, index) => {
-        const newName = generateNewName(index + 1, file.ext, total, prefix); //index + 1 从1开始递增
+        // ===========================  //index + 1 从1开始递增  prefix 自定义前缀
+        const newName = generateNewName(index + 1, file.ext, total, prefix); 
         const newPath = path.join(targetDir, newName);
 
         try {
@@ -75,7 +77,7 @@ function renameFiles() {
                 oldName: file.name,
                 newName: newName
             });
-            console.log(`  ✅ ${file.name} → ${newName}`);
+            // console.log(`  ✅ ${file.name} → ${newName}`);
         } catch (err) {
             console.error(`  ❌ 重命名失败: ${file.name}`, err.message);
             renameMap.push({
