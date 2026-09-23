@@ -4,6 +4,7 @@ const path = require('path');
 // ========== 配置区 ==========
 const targetDir = __dirname;  // 当前文件夹，可改为具体路径如 'C:/Users/YourName/Desktop/files'
 const prefix = 'cn';          // 自定义前缀，可改为 'img'、'photo' 等
+const serialno = 1;           // 从1开始递增
 // ===========================
 
 // 获取文件列表
@@ -68,7 +69,7 @@ function renameFiles() {
 
     files.forEach((file, index) => {
         // ===========================  //index + 1 从1开始递增  prefix 自定义前缀
-        const newName = generateNewName(index + 1, file.ext, total, prefix); 
+        const newName = generateNewName(index + serialno, file.ext, total, prefix); 
         const newPath = path.join(targetDir, newName);
 
         try {
