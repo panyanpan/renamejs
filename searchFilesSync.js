@@ -158,5 +158,8 @@ function main() {
 
 main();
 
-//cmd   dir /b > list.txt
-//powershell sha256 Get-ChildItem -Recurse -File | Where-Object { $_.Name -ne 'hashes.txt' } | Get-FileHash -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File -Encoding utf8 hashes.txt
+
+// dir /b > list.txt
+// Get-ChildItem | Where-Object {$_.Name -notlike "*.txt"} | Select-Object -ExpandProperty Name > list.txt
+// ls -I '*.txt' > list.txt
+// ls -I '*.txt' -p | grep -v / > list.txt

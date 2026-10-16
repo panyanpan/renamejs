@@ -135,3 +135,5 @@ main().catch(err => {
 
 //cmd   dir /b > list.txt
 //powershell sha256 Get-ChildItem -Recurse -File | Where-Object { $_.Name -ne 'hashes.txt' } | Get-FileHash -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File -Encoding utf8 hashes.txt
+//base  ls -I '*.txt' -p | grep -v / > list.txt
+//base sha256sum *.* > hashes.txt
